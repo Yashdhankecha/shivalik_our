@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: "::",
-      port: 8080,
+      port: 3000,  // Changed from 8080 to 3000 to avoid conflicts
     },
     plugins: [
       react(),

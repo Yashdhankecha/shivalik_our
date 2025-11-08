@@ -15,6 +15,15 @@ import CommunityDashboard from '../pages/CommunityDashboard';
 import ProfilePage from '../pages/ProfilePage';
 import SettingsPage from '../pages/SettingsPage';
 
+// Admin Pages
+import AdminDashboard from '../pages/admin/Dashboard';
+import UsersManagement from '../pages/admin/UsersManagement';
+import Communities from '../pages/admin/Communities';
+import Events from '../pages/admin/Events';
+import Reports from '../pages/admin/Reports';
+import Settings from '../pages/admin/Settings';
+import AdminProfile from '../pages/admin/Profile';
+
 /* current user roles */
 const getUserRoles = (): string[] => {
   try {
@@ -27,7 +36,7 @@ const getUserRoles = (): string[] => {
 
 /* Role default route mapping */
 const ROLE_DEFAULTS: Record<string, string> = {
-  SuperAdmin: '/users',
+  SuperAdmin: '/admin',
 };
 
 /* Component that decides where to redirect  */
@@ -77,7 +86,16 @@ export const AppRoutes = () => {
       <Route path="/settings" element={<SettingsPage />} />
       
       {/* ADMIN PANEL - For admin users */}
-      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/admin" element={<AdminPanel />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<UsersManagement />} />
+        <Route path="communities" element={<Communities />} />
+        <Route path="events" element={<Events />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<AdminProfile />} />
+      </Route>
       
       {/* PUBLIC COMMUNITY EVENTS PAGE */}
       <Route path="/events" element={<CommunityEventsPage />} />
