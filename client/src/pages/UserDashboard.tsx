@@ -12,7 +12,8 @@ import { Badge } from '../components/ui/badge';
 import { 
   Search, Users, Star,
   ChevronRight, MapPin, Settings, LogOut, Building2,
-  UserPlus, Check, Clock, Dumbbell, Waves, Car, Shield, TreePine
+  UserPlus, Check, Clock, Dumbbell, Waves, Car, Shield, TreePine,
+  ShoppingBag, Calendar, Home
 } from 'lucide-react';
 
 interface JoinRequest {
@@ -23,9 +24,9 @@ interface JoinRequest {
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('all');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activePage, setActivePage] = useState('communities');
   
   // Dynamic data from API
   const [allCommunities, setAllCommunities] = useState<CommunityType[]>([]);
@@ -41,16 +42,30 @@ const UserDashboard = () => {
   const fetchCommunities = async () => {
     try {
       setLoading(true);
-      const response = await communityApi.getAllCommunities();
-      if (response.data) {
-        const communities = response.data.communities || response.data || [];
+      console.log('Fetching communities...');
+      // Fetch ALL communities without any status filter
+      const response = await communityApi.getAllCommunities({ limit: 100 });
+      console.log('API Response:', response);
+      
+      // Backend returns: { message: "...", result: { communities: [...], pagination: {...} } }
+      if (response.result) {
+        const communities = response.result.communities || [];
+        console.log('Communities found:', communities.length, communities);
         setAllCommunities(communities);
-        // Filter user's communities (this would come from a separate API in production)
-        // For now, we'll show featured ones as "my communities"
-        setMyCommunities(communities.filter((c: CommunityType) => c.isFeatured).slice(0, 3));
+        // Filter user's communities - show first 5 for now
+        setMyCommunities(communities.slice(0, 5));
+      } else if (response.data) {
+        // Fallback: check if data is in response.data
+        const communities = response.data.communities || response.data || [];
+        console.log('Communities found (fallback):', communities.length, communities);
+        setAllCommunities(communities);
+        setMyCommunities(communities.slice(0, 5));
+      } else {
+        console.warn('No data in response:', response);
       }
     } catch (error: any) {
       console.error('Error fetching communities:', error);
+      console.error('Error details:', error.response?.data);
       showMessage(error.message || 'Failed to load communities', 'error');
     } finally {
       setLoading(false);
@@ -59,6 +74,13 @@ const UserDashboard = () => {
 
   const fetchJoinRequests = async () => {
     try {
+      // Skip if no auth token
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('No auth token, skipping join requests fetch');
+        return;
+      }
+
       const response = await communityApi.getUserJoinRequests();
       if (response.data) {
         setJoinRequests(response.data.map((req: any) => ({
@@ -68,18 +90,42 @@ const UserDashboard = () => {
       }
     } catch (error) {
       // User might not be authenticated, that's okay
-      console.log('Could not fetch join requests');
+      console.log('Could not fetch join requests:', error);
     }
   };
 
   const handleJoinCommunity = async (communityId: string) => {
     try {
+      // Check if user is logged in
+      const token = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user_data');
+      
+      console.log('Join request - Token exists:', !!token);
+      console.log('Join request - User data:', userData);
+      
+      if (!token || !userData) {
+        showMessage('Please login to join communities', 'error');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+        return;
+      }
+
+      console.log('Sending join request for community:', communityId);
       await communityApi.createJoinRequest({ communityId });
-      showMessage('Join request sent successfully!', 'success');
-      // Update join requests state
+      showMessage('Join request sent to community admin!', 'success');
+      // Update join requests state to show "Requested" button
       setJoinRequests([...joinRequests, { communityId, status: 'pending' }]);
     } catch (error: any) {
-      showMessage(error.message || 'Failed to send join request', 'error');
+      console.error('Join request error:', error);
+      if (error.message?.includes('Authentication') || error.message?.includes('login')) {
+        showMessage('Please login to join communities', 'error');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      } else {
+        showMessage(error.message || 'Failed to send join request', 'error');
+      }
     }
   };
 
@@ -201,6 +247,45 @@ const UserDashboard = () => {
               </div>
             </div>
 
+            {/* Navigation Menu */}
+            <div className="mb-6 space-y-2">
+              <button
+                onClick={() => setActivePage('communities')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activePage === 'communities'
+                    ? 'bg-emerald-900/40 text-emerald-100 border border-emerald-700/50'
+                    : 'text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-200'
+                }`}
+              >
+                <Building2 className="w-5 h-5" />
+                <span className="font-medium">Communities</span>
+              </button>
+              
+              <button
+                onClick={() => setActivePage('marketplace')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activePage === 'marketplace'
+                    ? 'bg-emerald-900/40 text-emerald-100 border border-emerald-700/50'
+                    : 'text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-200'
+                }`}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span className="font-medium">Marketplace</span>
+              </button>
+              
+              <button
+                onClick={() => setActivePage('events')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activePage === 'events'
+                    ? 'bg-emerald-900/40 text-emerald-100 border border-emerald-700/50'
+                    : 'text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-200'
+                }`}
+              >
+                <Calendar className="w-5 h-5" />
+                <span className="font-medium">Events</span>
+              </button>
+            </div>
+
             {/* Your Communities */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -215,13 +300,14 @@ const UserDashboard = () => {
                     <div
                       key={community._id}
                       className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-900/20 transition-all group cursor-pointer"
+                      onClick={() => navigate(`/community/${community._id}`)}
                     >
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getCommunityColor(index)} flex items-center justify-center text-white font-bold shadow-md group-hover:scale-110 transition-transform`}>
                         {community.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1 text-left">
                         <p className="font-semibold text-emerald-100 text-sm">{community.name}</p>
-                        <p className="text-xs text-gray-400">{community.totalUnits || 0} units</p>
+                        <p className="text-xs text-gray-400">{community.peopleCount || 0} members</p>
                       </div>
                     </div>
                   ))}
@@ -230,53 +316,27 @@ const UserDashboard = () => {
                 <p className="text-sm text-gray-400 text-center py-4">No communities joined yet</p>
               )}
             </div>
-
-            {/* Browse Communities Button */}
-            <Button 
-              className="w-full bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 shadow-lg text-white"
-              onClick={() => setActiveTab('browse')}
-            >
-              <Building2 className="w-4 h-4 mr-2" />
-              Browse Communities
-            </Button>
           </div>
         </aside>
 
         {/* MAIN SECTION - Browse All Communities */}
         <main className="flex-1 p-6 overflow-y-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-emerald-100 mb-2">Browse Communities</h1>
-            <p className="text-gray-400">Discover and join communities that match your interests</p>
-          </div>
+          {activePage === 'communities' && (
+            <>
+              {/* Header */}
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-emerald-100 mb-2">All Communities</h1>
+                <p className="text-gray-400">Discover and join communities that match your interests</p>
+              </div>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-            {['All', 'Featured', 'Popular', 'Newest'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab.toLowerCase())}
-                className={`px-5 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
-                  activeTab === tab.toLowerCase()
-                    ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-emerald-900/30'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Communities Grid */}
-          {loading ? (
-            <div className="text-center py-12 text-gray-400">Loading communities...</div>
-          ) : filteredCommunities.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Communities Grid */}
+              {loading ? (
+                <div className="text-center py-12 text-gray-400">Loading communities...</div>
+              ) : filteredCommunities.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCommunities.map((community, index) => {
                 const joinStatus = getJoinRequestStatus(community._id);
-                const communityImage = community.bannerImage || community.image || community.logo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800';
-                const highlights = community.highlights || [];
-                const displayHighlights = highlights.length > 0 ? highlights.slice(0, 6) : demoAmenities.map(a => a.name);
+                const communityImage = community.image || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800';
                 
                 return (
                   <Card key={community._id} className="hover:shadow-xl hover:shadow-emerald-900/30 transition-all duration-300 border-2 border-emerald-900/20 hover:border-emerald-700/50 overflow-hidden bg-gray-800 group">
@@ -287,7 +347,7 @@ const UserDashboard = () => {
                           alt={community.name} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                           onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800';
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800';
                           }}
                         />
                       </div>
@@ -295,86 +355,55 @@ const UserDashboard = () => {
                       {/* Overlay gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
                       
-                      {community.isFeatured && (
-                        <Badge className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 border-0 shadow-lg">
-                          <Star className="w-3 h-3 mr-1 fill-gray-900" />
-                          Featured
-                        </Badge>
-                      )}
-                      
+                      {/* Category Badge */}
                       <Badge className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-sm text-white border-0 capitalize shadow-lg">
-                        {community.status}
+                        {community.category}
                       </Badge>
                       
-                      {/* Territory badge */}
-                      {community.territory && (
-                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs text-emerald-300 font-medium">
-                          {community.territory}
+                      {/* Location badge */}
+                      {community.location && typeof community.location === 'string' && (
+                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs text-emerald-300 font-medium flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {community.location}
                         </div>
                       )}
                     </div>
                     
                     <CardContent className="p-5 space-y-4">
                       <div>
-                        <h3 className="font-bold text-xl mb-1 text-emerald-100 line-clamp-1">
+                        <h3 className="font-bold text-xl mb-2 text-emerald-100 line-clamp-1">
                           {community.name}
                         </h3>
-                        {community.shortDescription && (
-                          <p className="text-xs text-emerald-400 mb-2 font-medium">
-                            {community.shortDescription}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
-                          {community.description || 'Modern community with excellent amenities'}
+                        <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
+                          {community.description || 'Professional real estate community'}
                         </p>
                       </div>
                       
                       <div className="space-y-2 text-sm">
-                        {community.location?.city && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                            <span className="font-medium text-emerald-200 truncate">
-                              {community.location.city}, {community.location.state}
-                            </span>
-                          </div>
-                        )}
                         <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                          <Users className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                           <span className="text-gray-400">
-                            {community.totalUnits || '0'} Units • 
-                            <span className="text-emerald-300 font-medium"> {community.occupiedUnits || '0'} Occupied</span>
+                            <span className="text-emerald-300 font-medium">{community.peopleCount || 0}</span> Members
                           </span>
                         </div>
-                        {community.establishedYear && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Est. {community.establishedYear}</span>
-                          </div>
-                        )}
                       </div>
 
-                      {/* Highlights/Amenities Grid */}
-                      {displayHighlights.length > 0 && (
+                      {/* Tags */}
+                      {community.tags && Array.isArray(community.tags) && community.tags.length > 0 && (
                         <div>
-                          <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Highlights</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            {displayHighlights.slice(0, 4).map((highlight, idx) => {
-                              const amenity = demoAmenities[idx % demoAmenities.length];
-                              return (
-                                <div 
-                                  key={idx}
-                                  className="flex items-center gap-2 p-2 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg border border-emerald-900/20 hover:border-emerald-700/50 transition-all duration-300 group"
-                                >
-                                  <amenity.icon className={`w-4 h-4 ${amenity.color} flex-shrink-0 group-hover:scale-110 transition-transform`} />
-                                  <span className="text-[10px] text-gray-400 font-medium truncate">
-                                    {typeof highlight === 'string' ? highlight : amenity.name}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                          <div className="flex flex-wrap gap-2">
+                            {community.tags.slice(0, 3).map((tag, idx) => (
+                              <span 
+                                key={idx}
+                                className="px-2 py-1 bg-emerald-900/30 text-emerald-300 text-xs rounded-full border border-emerald-800/30"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {community.tags.length > 3 && (
+                              <span className="text-xs text-emerald-400">+{community.tags.length - 3} more</span>
+                            )}
                           </div>
-                          {highlights.length > 4 && (
-                            <p className="text-xs text-emerald-400 mt-2">+{highlights.length - 4} more</p>
-                          )}
                         </div>
                       )}
 
@@ -387,22 +416,26 @@ const UserDashboard = () => {
                             : 'bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800'
                         }`}
                         onClick={() => {
-                          if (joinStatus) {
+                          if (joinStatus === 'approved') {
+                            // If approved/joined, open community detail page
                             navigate(`/community/${community._id}`);
-                          } else {
+                          } else if (!joinStatus) {
+                            // If not requested yet, send join request
                             handleJoinCommunity(community._id);
                           }
+                          // If pending, do nothing (button shows status)
                         }}
+                        disabled={joinStatus === 'pending'}
                       >
                         {joinStatus === 'pending' ? (
                           <>
                             <Clock className="w-4 h-4 mr-2" />
-                            Pending Approval
+                            Requested
                           </>
                         ) : joinStatus === 'approved' ? (
                           <>
                             <Check className="w-4 h-4 mr-2" />
-                            Open Dashboard
+                            Open Community
                           </>
                         ) : (
                           <>
@@ -421,6 +454,24 @@ const UserDashboard = () => {
               <Building2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">No communities found</p>
               <p className="text-gray-500 text-sm">Try adjusting your search</p>
+            </div>
+          )}
+            </>
+          )}
+          
+          {activePage === 'marketplace' && (
+            <div className="text-center py-20">
+              <ShoppingBag className="w-20 h-20 text-emerald-600 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-emerald-100 mb-2">Marketplace</h2>
+              <p className="text-gray-400">Coming soon...</p>
+            </div>
+          )}
+          
+          {activePage === 'events' && (
+            <div className="text-center py-20">
+              <Calendar className="w-20 h-20 text-emerald-600 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-emerald-100 mb-2">Events</h2>
+              <p className="text-gray-400">Coming soon...</p>
             </div>
           )}
         </main>

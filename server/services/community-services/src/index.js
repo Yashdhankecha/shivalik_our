@@ -44,24 +44,28 @@ var whitelist = [
     '35.154.180.15:3011',
     'localhost:11001',
     'localhost:5173',  // Vite default port
+    'localhost:8080',  // Vite dev server port
     'localhost:3000',  // React default port
 ];
 
 var corsOption = function (req, callback) {
     var corsOptions;
-    if (whitelist.indexOf(req.header('host')) !== -1) {
-      corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
-    //   console.log(corsOptions);
-      callback(null, corsOptions)
+    // Get the origin header for CORS requests
+    const origin = req.header('origin');
+    
+    // Check if origin is in whitelist or if it's a same-origin request
+    if (!origin || whitelist.some(allowedOrigin => origin.includes(allowedOrigin))) {
+        corsOptions = { 
+            origin: true, 
+            credentials: true,
+            optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+        };
+        callback(null, corsOptions);
     } else {
-        corsOptions = { origin: false } // disable CORS for this request
-        // console.log(corsOptions);
-        callback(new Error(`Not allowed by CORS : ${req.header('host')}`))
-
+        corsOptions = { origin: false };
+        callback(null, corsOptions);
     }
-    // console.log(corsOptions);
-    // callback(null, corsOptions) // callback expects two parameters: error and options
-}
+};
 
 app.use(cors(corsOption));
 app.use(bodyParser.json());

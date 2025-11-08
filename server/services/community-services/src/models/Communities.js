@@ -13,19 +13,12 @@ const CommunitiesSchema = new Schema({
         type: String,
         required: true
     },
-    shortDescription: {
+    category: {
         type: String,
-        trim: true
+        enum: ['Developers', 'Investors', 'Brokers', 'Professionals', 'Builders', 'Consultants', 'Tech Professionals'],
+        required: true
     },
     image: {
-        type: String,
-        default: null
-    },
-    bannerImage: {
-        type: String,
-        default: null
-    },
-    logo: {
         type: String,
         default: null
     },
@@ -54,58 +47,26 @@ const CommunitiesSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'events'
     }],
-    territory: {
+    peopleCount: {
+        type: Number,
+        default: 0
+    },
+    location: {
         type: String,
         default: null
     },
-    location: {
-        address: { type: String },
-        city: { type: String },
-        state: { type: String },
-        zipCode: { type: String },
-        country: { type: String, default: 'India' },
-        coordinates: {
-            lat: { type: Number },
-            lng: { type: Number }
-        }
-    },
-    isFeatured: {
-        type: Boolean,
-        default: false,
-        index: true
-    },
-    highlights: [{
+    tags: [{
         type: String
     }],
-    amenityIds: [{
-        type: Schema.Types.ObjectId,
-        ref: 'amenities'
-    }],
-    totalUnits: {
-        type: Number,
-        default: 0
-    },
-    occupiedUnits: {
-        type: Number,
-        default: 0
-    },
-    establishedYear: {
-        type: Number
-    },
-    contactInfo: {
-        email: { type: String },
-        phone: { type: String },
-        website: { type: String }
-    },
     status: {
         type: String,
-        enum: ['active', 'inactive', 'pending', 'Active', 'Inactive', 'UnderDevelopment'],
+        enum: ['active', 'inactive', 'pending'],
         default: 'active',
         index: true
     },
     createdBy: {
         type: Schema.Types.ObjectId,
-         ref: 'users'
+        ref: 'users'
     },
     deletedAt: {
         type: Date,
@@ -118,6 +79,19 @@ const CommunitiesSchema = new Schema({
     }
 }, {
     timestamps: true
+});
+
+// Virtual field to compute peopleCount from members array
+CommunitiesSchema.virtual('memberCount').get(function() {
+    return this.members ? this.members.length : 0;
+});
+
+// Middleware to update peopleCount before saving
+CommunitiesSchema.pre('save', function(next) {
+    if (this.members) {
+        this.peopleCount = this.members.length;
+    }
+    next();
 });
 
 const CommunitiesModel = DBConnect.model('communities', CommunitiesSchema);

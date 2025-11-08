@@ -13,11 +13,9 @@ const getFeaturedCommunities = async (req, res) => {
         const limit = parseInt(req.query.limit) || 6;
         
         const communities = await CommunitiesModel.find({
-            isFeatured: true,
-            status: { $in: ['Active', 'active'] },
+            status: { $in: ['active'] },
             isDeleted: false
         })
-        .populate('amenityIds', 'name icon')
         .populate('managerId', 'name email')
         .limit(limit)
         .sort({ createdAt: -1 })
@@ -48,28 +46,25 @@ const getAllCommunities = async (req, res) => {
             isDeleted: false
         };
 
-        // Handle status filter - accept both 'Active' and 'active'
+        // Handle status filter - only filter if status is explicitly provided
         if (statusParam) {
             filter.status = { $in: [statusParam, statusParam.toLowerCase(), statusParam.charAt(0).toUpperCase() + statusParam.slice(1).toLowerCase()] };
-        } else {
-            // Default: show active communities (both 'Active' and 'active')
-            filter.status = { $in: ['Active', 'active'] };
         }
+        // If no status param, show ALL communities (don't filter by status)
 
         if (search) {
             filter.$or = [
                 { name: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } },
-                { 'location.city': { $regex: search, $options: 'i' } }
+                { location: { $regex: search, $options: 'i' } }
             ];
         }
 
         const communities = await CommunitiesModel.find(filter)
-            .populate('amenityIds', 'name icon')
             .populate('managerId', 'name email')
             .skip(skip)
             .limit(limit)
-            .sort({ isFeatured: -1, createdAt: -1 })
+            .sort({ createdAt: -1 })
             .lean();
 
         const total = await CommunitiesModel.countDocuments(filter);
@@ -103,7 +98,7 @@ const getCommunityById = async (req, res) => {
             _id: id,
             isDeleted: false
         })
-        .populate('amenityIds', 'name icon category')
+        .populate('managerId', 'name email')
         .populate('createdBy', 'name email')
         .lean();
 
@@ -134,7 +129,7 @@ const getRecentEvents = async (req, res) => {
             status: { $in: ['Upcoming', 'Ongoing'] },
             eventDate: { $gte: currentDate }
         })
-        .populate('communityId', 'name logo location')
+        .populate('communityId', 'name image location')
         .populate('createdBy', 'name')
         .limit(limit)
         .sort({ eventDate: 1 })
@@ -167,7 +162,7 @@ const getRecentAnnouncements = async (req, res) => {
                 { expiryDate: { $gte: currentDate } }
             ]
         })
-        .populate('communityId', 'name logo')
+        .populate('communityId', 'name image')
         .populate('createdBy', 'name')
         .limit(limit)
         .sort({ isPinned: -1, publishDate: -1 })
@@ -216,7 +211,28 @@ const createJoinRequest = async (req, res) => {
 
     try {
         const { communityId, message } = req.body;
-        const userId = req.user.id;
+        
+        console.log('=== Join Request Debug ===');
+        console.log('req.user:', req.user);
+        console.log('req.userId:', req.userId);
+        console.log('req.headers.authorization:', req.headers.authorization);
+        
+        // Check if user is authenticated
+        if (!req.user) {
+            console.error('User not authenticated, req.user is null/undefined');
+            return res.status(401).send(response.toJson('Authentication required. Please login to join communities'));
+        }
+        
+        // Get userId - could be either _id or id depending on middleware
+        const userId = req.user._id || req.user.id || req.userId;
+        console.log('Extracted userId:', userId);
+        
+        if (!userId) {
+            console.error('User ID not found. req.user:', JSON.stringify(req.user), 'req.userId:', req.userId);
+            return res.status(401).send(response.toJson('Authentication required. Please login to join communities'));
+        }
+        
+        console.log('Creating join request for user:', userId, 'community:', communityId);
 
         // Check if community exists
         const community = await CommunitiesModel.findOne({
@@ -228,14 +244,31 @@ const createJoinRequest = async (req, res) => {
             return res.status(404).send(response.toJson(messages['en'].common.not_exists));
         }
 
-        // Check for existing request
+        // Check for existing request (including deleted ones due to unique index)
         const existingRequest = await CommunityJoinRequestsModel.findOne({
             userId,
-            communityId,
-            isDeleted: false
+            communityId
         });
 
         if (existingRequest) {
+            // If request exists but is deleted, reactivate it
+            if (existingRequest.isDeleted) {
+                existingRequest.isDeleted = false;
+                existingRequest.status = 'Pending';
+                existingRequest.message = message || '';
+                existingRequest.reviewedBy = null;
+                existingRequest.reviewedAt = null;
+                existingRequest.reviewNotes = null;
+                existingRequest.deletedAt = null;
+                await existingRequest.save();
+                console.log('Reactivated deleted join request:', existingRequest._id);
+                return res.status(201).send(response.toJson(
+                    'Join request submitted successfully',
+                    existingRequest
+                ));
+            }
+            
+            // If active request exists, return error
             return res.status(400).send(response.toJson(
                 'You have already requested to join this community'
             ));
@@ -249,7 +282,19 @@ const createJoinRequest = async (req, res) => {
             status: 'Pending'
         });
 
-        await joinRequest.save();
+        try {
+            await joinRequest.save();
+            console.log('Join request created successfully:', joinRequest._id);
+        } catch (saveError) {
+            // Handle duplicate key error (E11000)
+            if (saveError.code === 11000) {
+                console.error('Duplicate join request detected:', saveError);
+                return res.status(400).send(response.toJson(
+                    'You have already requested to join this community'
+                ));
+            }
+            throw saveError; // Re-throw other errors
+        }
 
         return res.status(201).send(response.toJson(
             'Join request submitted successfully',
@@ -257,6 +302,7 @@ const createJoinRequest = async (req, res) => {
         ));
 
     } catch (err) {
+        console.error('Error creating join request:', err);
         const statusCode = err.statusCode || 500;
         const errMess = err.message || err;
         return res.status(statusCode).send(response.toJson(errMess));
@@ -266,13 +312,20 @@ const createJoinRequest = async (req, res) => {
 // Get User's Join Requests (Requires Authentication)
 const getUserJoinRequests = async (req, res) => {
     try {
-        const userId = req.user.id;
+        if (!req.user) {
+            return res.status(401).send(response.toJson('Authentication required'));
+        }
+        
+        const userId = req.user._id || req.user.id || req.userId;
+        if (!userId) {
+            return res.status(401).send(response.toJson('Authentication required'));
+        }
 
         const requests = await CommunityJoinRequestsModel.find({
             userId,
             isDeleted: false
         })
-        .populate('communityId', 'name logo location')
+        .populate('communityId', 'name image location')
         .populate('reviewedBy', 'name')
         .sort({ createdAt: -1 })
         .lean();
@@ -283,6 +336,7 @@ const getUserJoinRequests = async (req, res) => {
         ));
 
     } catch (err) {
+        console.error('Error fetching join requests:', err);
         const statusCode = err.statusCode || 500;
         const errMess = err.message || err;
         return res.status(statusCode).send(response.toJson(errMess));

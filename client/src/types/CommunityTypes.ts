@@ -11,10 +11,8 @@ export interface Community {
     _id: string;
     name: string;
     description: string;
-    shortDescription?: string;
+    category: 'Developers' | 'Investors' | 'Brokers' | 'Professionals' | 'Builders' | 'Consultants' | 'Tech Professionals';
     image?: string;
-    bannerImage?: string;
-    logo?: string;
     managerId?: string | {
         _id: string;
         name: string;
@@ -25,33 +23,14 @@ export interface Community {
     pulses?: string[];
     marketplaceListings?: string[];
     events?: string[];
-    territory?: string;
-    location: {
-        address?: string;
-        city?: string;
-        state?: string;
-        zipCode?: string;
-        country?: string;
-        coordinates?: {
-            lat?: number;
-            lng?: number;
-        };
-    };
-    isFeatured: boolean;
-    highlights?: string[];
-    amenityIds?: Amenity[];
-    totalUnits: number;
-    occupiedUnits: number;
-    establishedYear?: number;
-    contactInfo?: {
-        email?: string;
-        phone?: string;
-        website?: string;
-    };
-    status: 'Active' | 'Inactive' | 'UnderDevelopment' | 'active' | 'inactive' | 'pending';
+    peopleCount: number;
+    location?: string;
+    tags?: string[];
+    status: 'active' | 'inactive' | 'pending';
     createdBy?: string;
     createdAt: string;
     updatedAt: string;
+    isDeleted?: boolean;
 }
 
 export interface Event {

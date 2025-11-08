@@ -60,7 +60,7 @@ export const ResetPasswordPage = () => {
         setLoading(true);
 
         try {
-            const response = await apiClient.post('/auth/reset-password', {
+            const response = await apiClient.post('/api/v1/auth/reset-password', {
                 email,
                 otp,
                 newPassword
@@ -77,7 +77,11 @@ export const ResetPasswordPage = () => {
                 }, 2000);
             }
         } catch (error: any) {
-            showMessage(error.response?.data?.message || 'Failed to reset password', 'error');
+            console.error('Reset password error:', error);
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.errors?.[0]?.msg ||
+                               'Failed to reset password';
+            showMessage(errorMessage, 'error');
         } finally {
             setLoading(false);
         }

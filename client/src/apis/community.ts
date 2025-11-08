@@ -4,7 +4,7 @@ import apiClient from './apiService';
 export const communityApi = {
     // Get featured communities for landing page
     getFeaturedCommunities: async (limit: number = 6) => {
-        const response = await apiClient.get(`/community/communities/featured?limit=${limit}`);
+        const response = await apiClient.get(`/api/v1/community/communities/featured?limit=${limit}`);
         return response.data;
     },
 
@@ -21,31 +21,32 @@ export const communityApi = {
         if (params.search) queryParams.append('search', params.search);
         if (params.status) queryParams.append('status', params.status);
         
-        const response = await apiClient.get(`/community/communities?${queryParams.toString()}`);
+        const response = await apiClient.get(`/api/v1/community/communities?${queryParams.toString()}`);
+        // Backend returns: { data: { message: "...", result: { communities: [...] } } }
         return response.data;
     },
 
     // Get community by ID
     getCommunityById: async (id: string) => {
-        const response = await apiClient.get(`/community/communities/${id}`);
+        const response = await apiClient.get(`/api/v1/community/communities/${id}`);
         return response.data;
     },
 
     // Get recent events
     getRecentEvents: async (limit: number = 6) => {
-        const response = await apiClient.get(`/community/events/recent?limit=${limit}`);
+        const response = await apiClient.get(`/api/v1/community/events/recent?limit=${limit}`);
         return response.data;
     },
 
     // Get recent announcements
     getRecentAnnouncements: async (limit: number = 6) => {
-        const response = await apiClient.get(`/community/announcements/recent?limit=${limit}`);
+        const response = await apiClient.get(`/api/v1/community/announcements/recent?limit=${limit}`);
         return response.data;
     },
 
     // Get all amenities
     getAllAmenities: async () => {
-        const response = await apiClient.get('/community/amenities');
+        const response = await apiClient.get('/api/v1/community/amenities');
         return response.data;
     },
 
@@ -54,13 +55,13 @@ export const communityApi = {
         communityId: string;
         message?: string;
     }) => {
-        const response = await apiClient.post('/community/join-requests', data);
+        const response = await apiClient.post('/api/v1/community/join-requests', data);
         return response.data;
     },
 
     // Get user's join requests (requires authentication)
     getUserJoinRequests: async () => {
-        const response = await apiClient.get('/community/join-requests/user');
+        const response = await apiClient.get('/api/v1/community/join-requests/user');
         return response.data;
     }
 };

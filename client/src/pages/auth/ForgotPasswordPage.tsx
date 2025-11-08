@@ -28,7 +28,7 @@ export const ForgotPasswordPage = () => {
         setLoading(true);
 
         try {
-            const response = await apiClient.post('/auth/forgot-password', { email });
+            const response = await apiClient.post('/api/v1/auth/forgot-password', { email });
             
             if (response.data.message) {
                 showMessage('OTP sent to your email successfully');
