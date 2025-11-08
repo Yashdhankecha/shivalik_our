@@ -83,6 +83,10 @@ const v1Routes = require('./routes');
 // Use versioned routes
 app.use('/api/v1', v1Routes);
 
+// Add alias routes for backward compatibility with frontend
+const authRoutes = require('./routes/authRoutes');
+app.use('/auth', authRoutes);
+
 // Start RabbitMQ consumer
 setupTerritoryRabbitMQ().catch(err => console.error('Failed to start Territory RabbitMQ:', err));
 
