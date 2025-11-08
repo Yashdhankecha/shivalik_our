@@ -124,7 +124,7 @@ const HeroSection = ({ onExplore }: HeroSectionProps) => {
                     <div className="hidden lg:block relative h-[600px]">
                         <div className="absolute inset-0 flex items-center justify-center">
                             <img 
-                                src="https://i.postimg.cc/YCM9fJJj/image.png" 
+                                src="./public/image.png" 
                                 alt="Modern Buildings"
                                 className="w-full h-full object-contain animate-float drop-shadow-2xl"
                             />
