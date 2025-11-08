@@ -33,7 +33,7 @@ const AdminPanel = () => {
   const activeSection = getActiveSection();
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { id: 'users', label: 'Users Management', icon: Users, path: '/admin/users' },
     { id: 'communities', label: 'Communities', icon: Building2, path: '/admin/communities' },
     { id: 'events', label: 'Events', icon: Calendar, path: '/admin/events' },
@@ -147,8 +147,6 @@ const AdminPanel = () => {
                 </button>
               );
             })}
-
-
           </div>
         </aside>
 

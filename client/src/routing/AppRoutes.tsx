@@ -15,6 +15,15 @@ import CommunityDashboard from '../pages/CommunityDashboard';
 import ProfilePage from '../pages/ProfilePage';
 import SettingsPage from '../pages/SettingsPage';
 
+// Admin Pages
+import AdminDashboard from '../pages/admin/Dashboard';
+import UsersManagement from '../pages/admin/UsersManagement';
+import CommunitiesManagement from '../pages/admin/Communities';
+import EventsManagement from '../pages/admin/Events';
+import ReportsPage from '../pages/admin/Reports';
+import AdminSettings from '../pages/admin/Settings';
+import AdminProfile from '../pages/admin/Profile';
+
 /* current user roles */
 const getUserRoles = (): string[] => {
   try {
@@ -76,8 +85,17 @@ export const AppRoutes = () => {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/settings" element={<SettingsPage />} />
       
-      {/* ADMIN PANEL - For admin users */}
-      <Route path="/admin" element={<AdminPanel />} />
+      {/* ADMIN PANEL - For admin users with child routes */}
+      <Route path="/admin" element={<AdminPanel />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<UsersManagement />} />
+        <Route path="communities" element={<CommunitiesManagement />} />
+        <Route path="events" element={<EventsManagement />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<AdminProfile />} />
+      </Route>
       
       {/* PUBLIC COMMUNITY EVENTS PAGE */}
       <Route path="/events" element={<CommunityEventsPage />} />
