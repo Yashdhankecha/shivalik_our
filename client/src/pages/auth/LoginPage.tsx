@@ -55,7 +55,7 @@ export const LoginPage = () => {
                 }
 
                 // Login with mobile number
-                const response = await apiClient.post('/auth/login', {
+                const response = await apiClient.post('/api/v1/auth/login', {
                     mobileNumber: phoneNumber,
                     password
                 });
@@ -88,7 +88,7 @@ export const LoginPage = () => {
                 }
 
                 // Login with email
-                const response = await apiClient.post('/auth/login', {
+                const response = await apiClient.post('/api/v1/auth/login', {
                     email,
                     password
                 });

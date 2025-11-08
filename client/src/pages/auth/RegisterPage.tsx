@@ -86,7 +86,7 @@ export const RegisterPage = () => {
                 password: '***'
             });
 
-            const response = await apiClient.post('/auth/register', {
+            const response = await apiClient.post('/api/v1/auth/register', {
                 name: formData.name,
                 email: formData.email,
                 mobileNumber: formData.mobileNumber,
@@ -135,7 +135,7 @@ export const RegisterPage = () => {
         setLoading(true);
 
         try {
-            const response = await apiClient.post('/auth/verify-otp', {
+            const response = await apiClient.post('/api/v1/auth/verify-otp', {
                 email: formData.email,
                 otp
             });
@@ -159,7 +159,7 @@ export const RegisterPage = () => {
     const resendEmailOTP = async () => {
         setLoading(true);
         try {
-            const response = await apiClient.post('/auth/resend-otp', {
+            const response = await apiClient.post('/api/v1/auth/resend-otp', {
                 email: formData.email
             });
             

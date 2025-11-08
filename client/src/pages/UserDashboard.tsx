@@ -42,7 +42,14 @@ const UserDashboard = () => {
     try {
       setLoading(true);
       const response = await communityApi.getAllCommunities();
-      if (response.data) {
+      console.log('API Response:', response); // Debug log
+      if (response && response.result) {
+        const communities = response.result.communities || response.result || [];
+        setAllCommunities(communities);
+        // Filter user's communities (this would come from a separate API in production)
+        // For now, we'll show featured ones as "my communities"
+        setMyCommunities(communities.filter((c: CommunityType) => c.isFeatured).slice(0, 3));
+      } else if (response && response.data) {
         const communities = response.data.communities || response.data || [];
         setAllCommunities(communities);
         // Filter user's communities (this would come from a separate API in production)
@@ -60,7 +67,7 @@ const UserDashboard = () => {
   const fetchJoinRequests = async () => {
     try {
       const response = await communityApi.getUserJoinRequests();
-      if (response.data) {
+      if (response && response.data) {
         setJoinRequests(response.data.map((req: any) => ({
           communityId: req.communityId?._id || req.communityId,
           status: req.status.toLowerCase()
@@ -259,7 +266,7 @@ const UserDashboard = () => {
                 className={`px-5 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
                   activeTab === tab.toLowerCase()
                     ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-emerald-900/30'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 {tab}
@@ -267,165 +274,111 @@ const UserDashboard = () => {
             ))}
           </div>
 
-          {/* Communities Grid */}
+          {/* Community Grid */}
           {loading ? (
-            <div className="text-center py-12 text-gray-400">Loading communities...</div>
-          ) : filteredCommunities.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCommunities.map((community, index) => {
-                const joinStatus = getJoinRequestStatus(community._id);
-                const communityImage = community.bannerImage || community.image || community.logo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800';
-                const highlights = community.highlights || [];
-                const displayHighlights = highlights.length > 0 ? highlights.slice(0, 6) : demoAmenities.map(a => a.name);
-                
-                return (
-                  <Card key={community._id} className="hover:shadow-xl hover:shadow-emerald-900/30 transition-all duration-300 border-2 border-emerald-900/20 hover:border-emerald-700/50 overflow-hidden bg-gray-800 group">
-                    <div className="relative">
-                      <div className="h-56 overflow-hidden bg-gray-900">
-                        <img 
-                          src={communityImage} 
-                          alt={community.name} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800';
-                          }}
-                        />
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCommunities.map((community, index) => (
+                <Card 
+                  key={community._id} 
+                  className="bg-gray-800/50 backdrop-blur-sm border-emerald-900/30 hover:shadow-xl transition-all group cursor-pointer"
+                  onClick={() => navigate(`/community/${community._id}`)}
+                >
+                  <div className={`h-48 rounded-t-xl bg-gradient-to-br ${getCommunityColor(index)} relative overflow-hidden`}>
+                    {community.bannerImage ? (
+                      <img
+                        src={community.bannerImage}
+                        alt={community.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Building2 className="w-16 h-16 text-white/30" />
                       </div>
-                      
-                      {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
-                      
-                      {community.isFeatured && (
-                        <Badge className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 border-0 shadow-lg">
-                          <Star className="w-3 h-3 mr-1 fill-gray-900" />
-                          Featured
-                        </Badge>
-                      )}
-                      
-                      <Badge className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-sm text-white border-0 capitalize shadow-lg">
-                        {community.status}
+                    )}
+                    {community.isFeatured && (
+                      <Badge className="absolute top-3 right-3 bg-yellow-500 text-yellow-900">
+                        <Star className="w-3 h-3 mr-1" />
+                        Featured
                       </Badge>
-                      
-                      {/* Territory badge */}
-                      {community.territory && (
-                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs text-emerald-300 font-medium">
-                          {community.territory}
-                        </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all"></div>
+                  </div>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-bold text-lg text-emerald-100 group-hover:text-emerald-200 transition-colors">
+                        {community.name}
+                      </h3>
+                      <div className="flex items-center gap-1 text-sm text-gray-400">
+                        <Users className="w-4 h-4" />
+                        <span>{community.totalUnits || 0}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                      {community.shortDescription || community.description?.substring(0, 100) + '...'}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {community.amenityIds?.slice(0, 3).map((amenity: any) => (
+                        <Badge key={amenity._id} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                          {amenity.name}
+                        </Badge>
+                      ))}
+                      {community.amenityIds && community.amenityIds.length > 3 && (
+                        <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                          +{community.amenityIds.length - 3} more
+                        </Badge>
                       )}
                     </div>
                     
-                    <CardContent className="p-5 space-y-4">
-                      <div>
-                        <h3 className="font-bold text-xl mb-1 text-emerald-100 line-clamp-1">
-                          {community.name}
-                        </h3>
-                        {community.shortDescription && (
-                          <p className="text-xs text-emerald-400 mb-2 font-medium">
-                            {community.shortDescription}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
-                          {community.description || 'Modern community with excellent amenities'}
-                        </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-sm text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span>{community.location?.city || 'Location N/A'}</span>
                       </div>
                       
-                      <div className="space-y-2 text-sm">
-                        {community.location?.city && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                            <span className="font-medium text-emerald-200 truncate">
-                              {community.location.city}, {community.location.state}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                          <span className="text-gray-400">
-                            {community.totalUnits || '0'} Units • 
-                            <span className="text-emerald-300 font-medium"> {community.occupiedUnits || '0'} Occupied</span>
-                          </span>
-                        </div>
-                        {community.establishedYear && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Est. {community.establishedYear}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Highlights/Amenities Grid */}
-                      {displayHighlights.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Highlights</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            {displayHighlights.slice(0, 4).map((highlight, idx) => {
-                              const amenity = demoAmenities[idx % demoAmenities.length];
-                              return (
-                                <div 
-                                  key={idx}
-                                  className="flex items-center gap-2 p-2 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg border border-emerald-900/20 hover:border-emerald-700/50 transition-all duration-300 group"
-                                >
-                                  <amenity.icon className={`w-4 h-4 ${amenity.color} flex-shrink-0 group-hover:scale-110 transition-transform`} />
-                                  <span className="text-[10px] text-gray-400 font-medium truncate">
-                                    {typeof highlight === 'string' ? highlight : amenity.name}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {highlights.length > 4 && (
-                            <p className="text-xs text-emerald-400 mt-2">+{highlights.length - 4} more</p>
-                          )}
-                        </div>
-                      )}
-
-                      <Button 
-                        className={`w-full shadow-lg ${
-                          joinStatus === 'pending'
-                            ? 'bg-yellow-600 hover:bg-yellow-700'
-                            : joinStatus === 'approved'
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : 'bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800'
-                        }`}
-                        onClick={() => {
-                          if (joinStatus) {
-                            navigate(`/community/${community._id}`);
-                          } else {
+                      {getJoinRequestStatus(community._id) === 'approved' ? (
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Check className="w-4 h-4 mr-1" />
+                          Joined
+                        </Button>
+                      ) : getJoinRequestStatus(community._id) === 'pending' ? (
+                        <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700" disabled>
+                          <Clock className="w-4 h-4 mr-1" />
+                          Pending
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          className="bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleJoinCommunity(community._id);
-                          }
-                        }}
-                      >
-                        {joinStatus === 'pending' ? (
-                          <>
-                            <Clock className="w-4 h-4 mr-2" />
-                            Pending Approval
-                          </>
-                        ) : joinStatus === 'approved' ? (
-                          <>
-                            <Check className="w-4 h-4 mr-2" />
-                            Open Dashboard
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Join Community
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                          }}
+                        >
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          Join
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          ) : (
+          )}
+
+          {filteredCommunities.length === 0 && !loading && (
             <div className="text-center py-12">
               <Building2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No communities found</p>
-              <p className="text-gray-500 text-sm">Try adjusting your search</p>
+              <h3 className="text-xl font-bold text-gray-300 mb-2">No communities found</h3>
+              <p className="text-gray-500">Try adjusting your search or browse all communities</p>
             </div>
           )}
         </main>
-
-        {/* RIGHT SIDEBAR - Removed */}
       </div>
     </div>
   );

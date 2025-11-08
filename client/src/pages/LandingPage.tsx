@@ -50,7 +50,13 @@ const LandingPage = () => {
                 communityApi.getFeaturedCommunities(6)
             ]);
 
-            setFeaturedCommunities(communitiesRes.data || []);
+            // Handle both possible response structures
+            const communities = Array.isArray(communitiesRes) 
+                ? communitiesRes 
+                : communitiesRes.result || communitiesRes.data || [];
+
+            setFeaturedCommunities(communities);
+            
             // Mock recent pulses - in production, fetch from API
             setRecentPulses([
                 {

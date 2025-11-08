@@ -6,13 +6,16 @@ const AmenitiesModel = require('../models/Amenities.js');
 const EventsModel = require('../models/Events.js');
 const AnnouncementsModel = require('../models/Announcements.js');
 const CommunityJoinRequestsModel = require('../models/CommunityJoinRequests.js');
+const PulsesModel = require('../models/Pulses.js');
+const MarketplaceListingsModel = require('../models/MarketplaceListings.js');
 
 // Get Featured Communities for Landing Page
 const getFeaturedCommunities = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 6;
         
-        const communities = await CommunitiesModel.find({
+        // First try to find communities explicitly marked as featured
+        let communities = await CommunitiesModel.find({
             isFeatured: true,
             status: { $in: ['Active', 'active'] },
             isDeleted: false
@@ -22,6 +25,19 @@ const getFeaturedCommunities = async (req, res) => {
         .limit(limit)
         .sort({ createdAt: -1 })
         .lean();
+
+        // If no featured communities found, get the most recent active communities as fallback
+        if (communities.length === 0) {
+            communities = await CommunitiesModel.find({
+                status: { $in: ['Active', 'active'] },
+                isDeleted: false
+            })
+            .populate('amenityIds', 'name icon')
+            .populate('managerId', 'name email')
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .lean();
+        }
 
         return res.status(200).send(response.toJson(
             messages['en'].common.detail_success,
@@ -289,6 +305,231 @@ const getUserJoinRequests = async (req, res) => {
     }
 };
 
+// Get Pulses for a Community
+const getCommunityPulses = async (req, res) => {
+    try {
+        const { communityId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+
+        // Verify community exists
+        const community = await CommunitiesModel.findOne({
+            _id: communityId,
+            isDeleted: false
+        });
+
+        if (!community) {
+            return res.status(404).send(response.toJson(messages['en'].common.not_exists));
+        }
+
+        // Get pulses for this community
+        const pulses = await PulsesModel.find({
+            communityId: communityId,
+            isDeleted: false,
+            status: 'approved'
+        })
+        .populate('userId', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+        const total = await PulsesModel.countDocuments({
+            communityId: communityId,
+            isDeleted: false,
+            status: 'approved'
+        });
+
+        return res.status(200).send(response.toJson(
+            messages['en'].common.detail_success,
+            {
+                pulses,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        ));
+
+    } catch (err) {
+        const statusCode = err.statusCode || 500;
+        const errMess = err.message || err;
+        return res.status(statusCode).send(response.toJson(errMess));
+    }
+};
+
+// Get Marketplace Listings for a Community
+const getCommunityMarketplaceListings = async (req, res) => {
+    try {
+        const { communityId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+        const type = req.query.type; // 'want' or 'offer'
+
+        // Verify community exists
+        const community = await CommunitiesModel.findOne({
+            _id: communityId,
+            isDeleted: false
+        });
+
+        if (!community) {
+            return res.status(404).send(response.toJson(messages['en'].common.not_exists));
+        }
+
+        // Build filter
+        const filter = {
+            communityId: communityId,
+            isDeleted: false,
+            status: { $in: ['approved', 'sold'] }
+        };
+
+        if (type) {
+            filter.type = type;
+        }
+
+        // Get marketplace listings for this community
+        const listings = await MarketplaceListingsModel.find(filter)
+        .populate('userId', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+        const total = await MarketplaceListingsModel.countDocuments(filter);
+
+        return res.status(200).send(response.toJson(
+            messages['en'].common.detail_success,
+            {
+                listings,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        ));
+
+    } catch (err) {
+        const statusCode = err.statusCode || 500;
+        const errMess = err.message || err;
+        return res.status(statusCode).send(response.toJson(errMess));
+    }
+};
+
+// Get Community Members (simplified version)
+const getCommunityMembers = async (req, res) => {
+    try {
+        const { communityId } = req.params;
+
+        // Verify community exists
+        const community = await CommunitiesModel.findOne({
+            _id: communityId,
+            isDeleted: false
+        }).populate('managerId', 'name email');
+
+        if (!community) {
+            return res.status(404).send(response.toJson(messages['en'].common.not_exists));
+        }
+
+        // For now, return a simplified members list
+        // In a real implementation, you might want to fetch actual user details
+        const members = [
+            {
+                _id: community.managerId._id,
+                name: community.managerId.name,
+                email: community.managerId.email,
+                role: 'Manager',
+                isManager: true
+            }
+        ];
+
+        // Add other members if available
+        if (community.members && community.members.length > 0) {
+            // This would normally fetch actual user details from the users collection
+            // For now, we'll just return a simplified structure
+            community.members.forEach((memberId, index) => {
+                members.push({
+                    _id: memberId,
+                    name: `Member ${index + 1}`,
+                    role: 'Resident',
+                    isManager: false
+                });
+            });
+        }
+
+        return res.status(200).send(response.toJson(
+            messages['en'].common.detail_success,
+            members
+        ));
+
+    } catch (err) {
+        const statusCode = err.statusCode || 500;
+        const errMess = err.message || err;
+        return res.status(statusCode).send(response.toJson(errMess));
+    }
+};
+
+// Get Community Events
+const getCommunityEvents = async (req, res) => {
+    try {
+        const { communityId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+
+        // Verify community exists
+        const community = await CommunitiesModel.findOne({
+            _id: communityId,
+            isDeleted: false
+        });
+
+        if (!community) {
+            return res.status(404).send(response.toJson(messages['en'].common.not_exists));
+        }
+
+        // Get events for this community
+        const events = await EventsModel.find({
+            communityId: communityId,
+            isDeleted: false,
+            status: { $in: ['Upcoming', 'Ongoing'] }
+        })
+        .populate('createdBy', 'name')
+        .sort({ eventDate: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+        const total = await EventsModel.countDocuments({
+            communityId: communityId,
+            isDeleted: false,
+            status: { $in: ['Upcoming', 'Ongoing'] }
+        });
+
+        return res.status(200).send(response.toJson(
+            messages['en'].common.detail_success,
+            {
+                events,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        ));
+
+    } catch (err) {
+        const statusCode = err.statusCode || 500;
+        const errMess = err.message || err;
+        return res.status(statusCode).send(response.toJson(errMess));
+    }
+};
+
 module.exports = {
     getFeaturedCommunities,
     getAllCommunities,
@@ -297,6 +538,9 @@ module.exports = {
     getRecentAnnouncements,
     getAllAmenities,
     createJoinRequest,
-    getUserJoinRequests
+    getUserJoinRequests,
+    getCommunityPulses,
+    getCommunityMarketplaceListings,
+    getCommunityMembers,
+    getCommunityEvents
 };
-
