@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/index.js",
     "migrate": "node src/migrations/migrate.js",
+    "seed:landing": "node src/console/seedLandingData.js",
     "test": "jest",
     "start:dev": "nodemon app.js --env=dev"
   },

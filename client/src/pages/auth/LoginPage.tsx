@@ -26,6 +26,21 @@ export const LoginPage = () => {
         setLoading(true);
 
         try {
+            // Check for admin credentials (works offline)
+            if (loginMethod === 'email' && email === 'admin@gmail.com' && password === '321ewq') {
+                showMessage('Admin login successful!');
+                // Set admin user data
+                await setToLocalStorage('auth_token', 'admin-token-' + Date.now());
+                await setToLocalStorage('userInfo', {
+                    email: 'admin@gmail.com',
+                    name: 'Admin User',
+                    role: 'admin'
+                });
+                navigate('/admin');
+                setLoading(false);
+                return;
+            }
+
             // Validation
             if (loginMethod === 'phone') {
                 if (!phoneNumber || phoneNumber.length !== 10) {
@@ -50,7 +65,7 @@ export const LoginPage = () => {
                     await setToLocalStorage('auth_token', response.data.result.accessToken);
                     await setToLocalStorage('refresh_token', response.data.result.refreshToken);
                     await setToLocalStorage('userInfo', response.data.result.user);
-                    navigate('/');
+                    navigate('/dashboard');
                 }
             } else {
                 if (!email) {
@@ -83,11 +98,16 @@ export const LoginPage = () => {
                     await setToLocalStorage('auth_token', response.data.result.accessToken);
                     await setToLocalStorage('refresh_token', response.data.result.refreshToken);
                     await setToLocalStorage('userInfo', response.data.result.user);
-                    navigate('/');
+                    navigate('/dashboard');
                 }
             }
         } catch (error: any) {
-            showMessage(error.response?.data?.message || 'Login failed', 'error');
+            // Check if it's a connection error and provide helpful message
+            if (error.code === 'ERR_NETWORK' || error.message?.includes('ERR_CONNECTION_REFUSED')) {
+                showMessage('Backend server is not running. Use admin credentials (admin@gmail.com / 321ewq) for offline access.', 'error');
+            } else {
+                showMessage(error.response?.data?.message || 'Login failed. Please check your credentials.', 'error');
+            }
         } finally {
             setLoading(false);
         }

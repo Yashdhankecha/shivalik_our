@@ -7,6 +7,11 @@ import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
+import LandingPage from '../pages/LandingPage';
+import CommunityEventsPage from '../pages/CommunityEventsPage';
+import UserDashboard from '../pages/UserDashboard';
+import AdminPanel from '../pages/AdminPanel';
+import CommunityDashboard from '../pages/CommunityDashboard';
 
 /* current user roles */
 const getUserRoles = (): string[] => {
@@ -28,6 +33,14 @@ const RedirectByRole = () => {
   const location = useLocation();
   const roles = getUserRoles();
 
+  // Check if user is authenticated
+  const authToken = localStorage.getItem('auth_token');
+  
+  // Always redirect to dashboard (whether authenticated or not)
+  if (location.pathname === '/' || location.pathname === '') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // If we are already on a page that belongs to the user – stay there
   if (location.pathname !== '/' && location.pathname !== '') {
     return null; // let the child route render
@@ -40,15 +53,33 @@ const RedirectByRole = () => {
     }
   }
 
-  // Fallback for unknown / Guest
-  return <Navigate to="/users" replace />;
+  // Fallback for all users
+  return <Navigate to="/dashboard" replace />;
 };
 
 /* ────── Main router ────── */
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* PUBLIC */}
+      {/* ROOT - Redirect to User Dashboard */}
+      <Route path="/" element={<UserDashboard />} />
+      
+      {/* USER DASHBOARD - Default page for all users */}
+      <Route path="/dashboard" element={<UserDashboard />} />
+      
+      {/* COMMUNITY DASHBOARD - Individual community view */}
+      <Route path="/community/:communityId" element={<CommunityDashboard />} />
+      
+      {/* ADMIN PANEL - For admin users */}
+      <Route path="/admin" element={<AdminPanel />} />
+      
+      {/* PUBLIC COMMUNITY EVENTS PAGE (Temporarily removed from flow) */}
+      <Route path="/events" element={<CommunityEventsPage />} />
+      
+      {/* PUBLIC LANDING PAGE */}
+      <Route path="/landing" element={<LandingPage />} />
+
+      {/* PUBLIC AUTH ROUTES */}
       <Route
         path="/login"
         element={
@@ -90,27 +121,8 @@ export const AppRoutes = () => {
         }
       />
 
-      {/* Private Route */}
-      <Route
-        path="/*"
-        element={
-          <PrivateRoute>
-            <DashboardLayout />
-          </PrivateRoute>
-        }
-      >
-        {/* Default entry point – decides where to go based on current role */}
-        <Route index element={<RedirectByRole />} />
-
-        {/* All private pages  */}
-        {/* <Route path="users" element={<PeoplePage />} /> */}
-
-        {/* Catch-all inside private area (keeps the layout) */}
-        <Route path="*" element={<RedirectByRole />} />
-      </Route>
-
-      {/* Global catch-all (outside private area) */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Global catch-all - redirect to dashboard */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
