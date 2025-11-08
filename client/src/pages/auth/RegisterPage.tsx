@@ -174,28 +174,28 @@ export const RegisterPage = () => {
     };
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden">
+        <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-gray-900 via-green-950 to-black">
             {/* Real Estate Background */}
             <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
                 style={{
-                    backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070')"
+                    backgroundImage: "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070')"
                 }}
             />
             
             {/* Overlay Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-amber-900/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-green-900/20" />
             
             {/* Content */}
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-12">
                 <div className="w-full max-w-md">
                     {/* Logo & Branding */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-xl mb-4">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-green-800 shadow-xl mb-4">
                             <Building2 className="w-8 h-8 text-white" />
                         </div>
                         <h1 className="text-4xl font-bold text-white mb-2">Shivalik Group</h1>
-                        <p className="text-blue-200 text-sm">Real Estate Operating System</p>
+                        <p className="text-emerald-200 text-sm">Real Estate Operating System</p>
                     </div>
 
                     {/* Register Card */}

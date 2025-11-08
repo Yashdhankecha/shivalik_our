@@ -1,4 +1,5 @@
 import { Community } from '../../types/CommunityTypes';
+import { Dumbbell, Waves, Car, Shield, Users, TreePine } from 'lucide-react';
 
 interface FeaturedCommunitiesProps {
     communities: Community[];
@@ -13,6 +14,14 @@ const FeaturedCommunities = ({
     onJoinCommunity, 
     onViewAll 
 }: FeaturedCommunitiesProps) => {
+    const demoAmenities = [
+        { icon: Dumbbell, name: 'Fitness Center', color: 'text-red-600' },
+        { icon: Waves, name: 'Swimming Pool', color: 'text-blue-600' },
+        { icon: Car, name: 'Parking', color: 'text-gray-600' },
+        { icon: Shield, name: '24/7 Security', color: 'text-green-600' },
+        { icon: Users, name: 'Clubhouse', color: 'text-purple-600' },
+        { icon: TreePine, name: 'Garden', color: 'text-emerald-600' }
+    ];
     if (loading) {
         return (
             <section className="py-16 bg-white">
@@ -35,72 +44,84 @@ const FeaturedCommunities = ({
     }
 
     return (
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-gradient-to-br from-black via-gray-900 to-green-950">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900">Featured Communities</h2>
+                <div className="flex justify-between items-center mb-12">
+                    <div>
+                        <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-600 bg-clip-text text-transparent mb-2">
+                            Featured Communities
+                        </h2>
+                        <p className="text-gray-400">Discover premium living spaces with world-class amenities</p>
+                    </div>
                     <button
                         onClick={onViewAll}
-                        className="text-blue-600 hover:text-blue-700 font-semibold"
+                        className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-emerald-900/50 transition-all duration-300 transform hover:scale-105"
                     >
                         View All →
                     </button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {communities.map((community) => (
-                        <div key={community._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                            <div className="h-48 bg-gradient-to-r from-blue-400 to-blue-600 relative">
+                        <div key={community._id} className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl hover:shadow-emerald-900/30 transition-all duration-300 transform hover:-translate-y-2 border border-emerald-900/20">
+                            <div className="h-56 bg-gradient-to-r from-emerald-600 to-green-700 relative overflow-hidden">
                                 {community.bannerImage ? (
                                     <img
                                         src={community.bannerImage}
                                         alt={community.name}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
-                                        {community.name.charAt(0)}
-                                    </div>
+                                    <img
+                                        src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800"
+                                        alt={community.name}
+                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                                    />
                                 )}
+                                <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-900/90 backdrop-blur-sm rounded-full text-xs font-semibold text-emerald-200">
+                                    Featured
+                                </div>
                             </div>
                             
                             <div className="p-6">
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                <h3 className="text-2xl font-bold text-emerald-100 mb-2">
                                     {community.name}
                                 </h3>
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                    {community.shortDescription || community.description}
+                                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                                    {community.shortDescription || community.description || 'Luxury living redefined with modern amenities and excellent connectivity.'}
                                 </p>
                                 
-                                <div className="flex items-center text-sm text-gray-500 mb-4">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="flex items-center text-sm text-gray-400 mb-4">
+                                    <svg className="w-4 h-4 mr-1 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    {community.location?.city}, {community.location?.state}
+                                    <span className="font-medium">
+                                        {community.location?.city || 'Dehradun'}, {community.location?.state || 'Uttarakhand'}
+                                    </span>
                                 </div>
 
-                                {community.amenityIds && community.amenityIds.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {community.amenityIds.slice(0, 3).map((amenity) => (
-                                            <span
-                                                key={amenity._id}
-                                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                                {/* Amenities Grid */}
+                                <div className="mb-6">
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-3">Amenities</h4>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {demoAmenities.slice(0, 6).map((amenity, index) => (
+                                            <div 
+                                                key={index}
+                                                className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-emerald-900/20 hover:border-emerald-700/50 hover:shadow-md hover:shadow-emerald-900/30 transition-all duration-300 group"
                                             >
-                                                {amenity.name}
-                                            </span>
+                                                <amenity.icon className={`w-6 h-6 ${amenity.color} mb-1 group-hover:scale-110 transition-transform`} />
+                                                <span className="text-[10px] text-gray-400 font-medium text-center leading-tight">
+                                                    {amenity.name}
+                                                </span>
+                                            </div>
                                         ))}
-                                        {community.amenityIds.length > 3 && (
-                                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                                +{community.amenityIds.length - 3} more
-                                            </span>
-                                        )}
                                     </div>
-                                )}
+                                </div>
 
                                 <button
                                     onClick={() => onJoinCommunity(community._id)}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold rounded-xl hover:shadow-xl hover:shadow-emerald-900/50 transition-all duration-300 transform hover:scale-105"
                                 >
                                     Join Community
                                 </button>

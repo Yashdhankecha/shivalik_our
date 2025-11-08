@@ -14,10 +14,11 @@ const getFeaturedCommunities = async (req, res) => {
         
         const communities = await CommunitiesModel.find({
             isFeatured: true,
-            status: 'Active',
+            status: { $in: ['Active', 'active'] },
             isDeleted: false
         })
         .populate('amenityIds', 'name icon')
+        .populate('managerId', 'name email')
         .limit(limit)
         .sort({ createdAt: -1 })
         .lean();
@@ -41,12 +42,19 @@ const getAllCommunities = async (req, res) => {
         const limit = parseInt(req.query.limit) || 12;
         const skip = (page - 1) * limit;
         const search = req.query.search || '';
-        const status = req.query.status || 'Active';
+        const statusParam = req.query.status;
 
         const filter = {
-            isDeleted: false,
-            status: status
+            isDeleted: false
         };
+
+        // Handle status filter - accept both 'Active' and 'active'
+        if (statusParam) {
+            filter.status = { $in: [statusParam, statusParam.toLowerCase(), statusParam.charAt(0).toUpperCase() + statusParam.slice(1).toLowerCase()] };
+        } else {
+            // Default: show active communities (both 'Active' and 'active')
+            filter.status = { $in: ['Active', 'active'] };
+        }
 
         if (search) {
             filter.$or = [
@@ -58,9 +66,10 @@ const getAllCommunities = async (req, res) => {
 
         const communities = await CommunitiesModel.find(filter)
             .populate('amenityIds', 'name icon')
+            .populate('managerId', 'name email')
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 })
+            .sort({ isFeatured: -1, createdAt: -1 })
             .lean();
 
         const total = await CommunitiesModel.countDocuments(filter);

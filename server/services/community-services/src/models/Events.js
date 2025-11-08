@@ -45,6 +45,35 @@ const EventsSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'users'
     }],
+    participants: [{
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'confirmed', 'rejected'],
+            default: 'pending'
+        },
+        registeredAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    attendance: [{
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        markedAt: {
+            type: Date,
+            default: Date.now
+        },
+        verified: {
+            type: Boolean,
+            default: false
+        }
+    }],
     eventType: {
         type: String,
         enum: ['Cultural', 'Sports', 'Educational', 'Social', 'Festival', 'Meeting', 'Other'],
@@ -52,7 +81,7 @@ const EventsSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Upcoming', 'Ongoing', 'Completed', 'Cancelled'],
+        enum: ['Upcoming', 'Ongoing', 'Completed', 'Cancelled', 'upcoming', 'ongoing', 'completed', 'cancelled'],
         default: 'Upcoming',
         index: true
     },
@@ -60,15 +89,6 @@ const EventsSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'users',
         required: true
-    },
-    createdAt: {
-        type: Date,
-        index: true,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     },
     deletedAt: {
         type: Date,

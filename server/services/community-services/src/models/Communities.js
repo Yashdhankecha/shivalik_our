@@ -6,6 +6,7 @@ const CommunitiesSchema = new Schema({
     name: {
         type: String,
         required: true,
+        unique: true,
         trim: true
     },
     description: {
@@ -16,11 +17,44 @@ const CommunitiesSchema = new Schema({
         type: String,
         trim: true
     },
+    image: {
+        type: String,
+        default: null
+    },
     bannerImage: {
         type: String,
         default: null
     },
     logo: {
+        type: String,
+        default: null
+    },
+    managerId: {
+        type: Schema.Types.ObjectId,
+        ref: 'users',
+        required: true
+    },
+    members: [{
+        type: Schema.Types.ObjectId,
+        ref: 'users'
+    }],
+    pendingRequests: [{
+        type: Schema.Types.ObjectId,
+        ref: 'users'
+    }],
+    pulses: [{
+        type: Schema.Types.ObjectId,
+        ref: 'pulses'
+    }],
+    marketplaceListings: [{
+        type: Schema.Types.ObjectId,
+        ref: 'marketplaceListings'
+    }],
+    events: [{
+        type: Schema.Types.ObjectId,
+        ref: 'events'
+    }],
+    territory: {
         type: String,
         default: null
     },
@@ -65,22 +99,13 @@ const CommunitiesSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Active', 'Inactive', 'UnderDevelopment'],
-        default: 'Active',
+        enum: ['active', 'inactive', 'pending', 'Active', 'Inactive', 'UnderDevelopment'],
+        default: 'active',
         index: true
     },
     createdBy: {
         type: Schema.Types.ObjectId,
-        ref: 'users'
-    },
-    createdAt: {
-        type: Date,
-        index: true,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+         ref: 'users'
     },
     deletedAt: {
         type: Date,

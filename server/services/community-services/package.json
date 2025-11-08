@@ -6,6 +6,8 @@
     "start": "node src/index.js",
     "migrate": "node src/migrations/migrate.js",
     "seed:landing": "node src/console/seedLandingData.js",
+    "seed:community": "node src/models/seedData.js",
+    "verify:community": "node src/models/verifyData.js",
     "test": "jest",
     "start:dev": "nodemon app.js --env=dev"
   },

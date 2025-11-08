@@ -12,6 +12,8 @@ import CommunityEventsPage from '../pages/CommunityEventsPage';
 import UserDashboard from '../pages/UserDashboard';
 import AdminPanel from '../pages/AdminPanel';
 import CommunityDashboard from '../pages/CommunityDashboard';
+import ProfilePage from '../pages/ProfilePage';
+import SettingsPage from '../pages/SettingsPage';
 
 /* current user roles */
 const getUserRoles = (): string[] => {
@@ -61,23 +63,24 @@ const RedirectByRole = () => {
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* ROOT - Redirect to User Dashboard */}
-      <Route path="/" element={<UserDashboard />} />
+      {/* ROOT - Show Landing Page with Hero Section */}
+      <Route path="/" element={<LandingPage />} />
       
-      {/* USER DASHBOARD - Default page for all users */}
+      {/* USER DASHBOARD - Default page for authenticated users */}
       <Route path="/dashboard" element={<UserDashboard />} />
       
       {/* COMMUNITY DASHBOARD - Individual community view */}
       <Route path="/community/:communityId" element={<CommunityDashboard />} />
       
+      {/* PROFILE & SETTINGS */}
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      
       {/* ADMIN PANEL - For admin users */}
       <Route path="/admin" element={<AdminPanel />} />
       
-      {/* PUBLIC COMMUNITY EVENTS PAGE (Temporarily removed from flow) */}
+      {/* PUBLIC COMMUNITY EVENTS PAGE */}
       <Route path="/events" element={<CommunityEventsPage />} />
-      
-      {/* PUBLIC LANDING PAGE */}
-      <Route path="/landing" element={<LandingPage />} />
 
       {/* PUBLIC AUTH ROUTES */}
       <Route

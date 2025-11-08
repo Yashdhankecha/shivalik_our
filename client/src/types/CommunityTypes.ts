@@ -12,8 +12,20 @@ export interface Community {
     name: string;
     description: string;
     shortDescription?: string;
+    image?: string;
     bannerImage?: string;
     logo?: string;
+    managerId?: string | {
+        _id: string;
+        name: string;
+        email: string;
+    };
+    members?: string[];
+    pendingRequests?: string[];
+    pulses?: string[];
+    marketplaceListings?: string[];
+    events?: string[];
+    territory?: string;
     location: {
         address?: string;
         city?: string;
@@ -36,7 +48,8 @@ export interface Community {
         phone?: string;
         website?: string;
     };
-    status: 'Active' | 'Inactive' | 'UnderDevelopment';
+    status: 'Active' | 'Inactive' | 'UnderDevelopment' | 'active' | 'inactive' | 'pending';
+    createdBy?: string;
     createdAt: string;
     updatedAt: string;
 }
